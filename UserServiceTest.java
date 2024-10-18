@@ -1,25 +1,39 @@
 package com.example.demo.service;
 
 import com.example.demo.model.User;
+import com.example.demo.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 class UserServiceTest {
 
-    private UserService userService;
+    @InjectMocks
+    private UserServiceImpl userService;
+
+    @Mock
+    private UserRepository userRepository;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService();
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
     void testCreateUser() {
         User user = new User(1L, "John Doe", "john@example.com");
+        when(userRepository.save(any(User.class))).thenReturn(user);
+
         User createdUser = userService.createUser(user);
 
         assertNotNull(createdUser);
@@ -32,12 +46,14 @@ class UserServiceTest {
     void testGetUsers() {
         User user1 = new User(1L, "John Doe", "john@example.com");
         User user2 = new User(2L, "Jane Doe", "jane@example.com");
+        List<User> userList = new ArrayList<>();
+        userList.add(user1);
+        userList.add(user2);
 
-        userService.createUser(user1);
-        userService.createUser(user2);
+        when(userRepository.findAll()).thenReturn(userList);
 
         List<User> users = userService.getUsers();
-        
+
         assertEquals(2, users.size());
         assertTrue(users.contains(user1));
         assertTrue(users.contains(user2));
@@ -46,7 +62,7 @@ class UserServiceTest {
     @Test
     void testGetUserById_UserExists() {
         User user = new User(1L, "John Doe", "john@example.com");
-        userService.createUser(user);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         User foundUser = userService.getUserById(1L);
 
@@ -58,6 +74,8 @@ class UserServiceTest {
 
     @Test
     void testGetUserById_UserNotFound() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
         User foundUser = userService.getUserById(1L);
 
         assertNull(foundUser);
